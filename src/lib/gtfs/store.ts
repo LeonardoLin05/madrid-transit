@@ -13,8 +13,9 @@ import type {
 
 /**
  * Los datos se leen de:
- * - `GTFS_DATA_URL` (producción / Vercel): URL base del almacenamiento (Vercel Blob) donde
- *   `npm run gtfs:upload` deja los JSON, con la misma estructura que `data/gtfs/processed/`.
+ * - `GTFS_DATA_URL` (producción): URL base del sitio de GitHub Pages donde el workflow del repo de
+ *   datos publica `data/gtfs/processed/` (p. ej. `https://usuario.github.io/madrid-transit-data`).
+ *   Next cachea cada fichero 1 h (solo los de menos de 2 MB).
  * - `data/gtfs/processed/` (desarrollo): si `GTFS_DATA_URL` no está definida.
  */
 const LOCAL_DIR = path.resolve(process.cwd(), "data/gtfs/processed");
@@ -27,7 +28,6 @@ export async function readProcessed<T>(
   file: string,
 ): Promise<T | null> {
   const baseUrl = process.env.GTFS_DATA_URL?.replace(/\/+$/, "");
-
   if (baseUrl) {
     const res = await fetch(`${baseUrl}/${mode}/${file}`, {
       next: { revalidate: REVALIDATE_SECONDS },
@@ -36,6 +36,7 @@ export async function readProcessed<T>(
     if (!res.ok) throw new Error(`GTFS ${mode}/${file}: HTTP ${res.status}`);
     return (await res.json()) as T;
   }
+
 
   // turbopackIgnore: la ruta es dinámica y apunta a datos, no a código; sin esto el trazado de
   // ficheros de Next intenta incluir todo `data/` (decenas de miles de ficheros) en el despliegue.

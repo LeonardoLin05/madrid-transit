@@ -10,11 +10,9 @@
     "postinstall": "node scripts/copy-maplibre-worker.mjs",
     "gtfs:download": "node --env-file-if-exists=.env.local scripts/download-gtfs.mts",
     "gtfs:process": "node scripts/process-gtfs.mts",
-    "gtfs:upload": "node --env-file-if-exists=.env.local scripts/upload-gtfs.mts",
     "typecheck": "next typegen && tsc --noEmit"
   },
   "dependencies": {
-    "@vercel/blob": "^2.4.1",
     "gtfs-realtime-bindings": "^2.2.0",
     "lucide-react": "^1.78.0",
     "maplibre-gl": "^6.19.0",

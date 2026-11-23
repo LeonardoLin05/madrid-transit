@@ -1,0 +1,52 @@
+# Genera los JSON de data/gtfs/processed/ a partir de los GTFS del CRTM y los publica en GitHub
+# Pages. No hace commits: cada publicación sustituye a la anterior, así que el repositorio no crece.
+# La web los lee de GTFS_DATA_URL sin redesplegar. Ver docs/arquitectura.md.
+name: Publicar datos GTFS
+
+on:
+  schedule:
+    - cron: "0 4 * * 1" # lunes, 04:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Una sola publicación a la vez.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      GTFS_URL_METRO: ${{ secrets.GTFS_URL_METRO }}
+      GTFS_URL_METRO_LIGERO: ${{ secrets.GTFS_URL_METRO_LIGERO }}
+      GTFS_URL_CERCANIAS: ${{ secrets.GTFS_URL_CERCANIAS }}
+      GTFS_URL_EMT: ${{ secrets.GTFS_URL_EMT }}
+      GTFS_URL_INTERURBANOS: ${{ secrets.GTFS_URL_INTERURBANOS }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run gtfs:download
+      - run: npm run gtfs:process
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: data/gtfs/processed
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
