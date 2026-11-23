@@ -1,0 +1,30 @@
+name: Actualizar datos GTFS
+
+# Descarga los GTFS del CRTM, los preprocesa y los sube a Vercel Blob.
+# No requiere redeploy: el servidor lee los datos desde GTFS_DATA_URL.
+on:
+  schedule:
+    - cron: "0 4 * * 1" # lunes, 04:00 UTC
+  workflow_dispatch:
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      GTFS_URL_METRO: ${{ secrets.GTFS_URL_METRO }}
+      GTFS_URL_METRO_LIGERO: ${{ secrets.GTFS_URL_METRO_LIGERO }}
+      GTFS_URL_CERCANIAS: ${{ secrets.GTFS_URL_CERCANIAS }}
+      GTFS_URL_EMT: ${{ secrets.GTFS_URL_EMT }}
+      GTFS_URL_INTERURBANOS: ${{ secrets.GTFS_URL_INTERURBANOS }}
+      BLOB_READ_WRITE_TOKEN: ${{ secrets.BLOB_READ_WRITE_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run gtfs:download
+      - run: npm run gtfs:process
+      - run: npm run gtfs:upload

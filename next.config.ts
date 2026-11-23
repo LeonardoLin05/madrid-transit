@@ -1,7 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // Los datos GTFS preprocesados (data/, cientos de MB) no se empaquetan con las funciones: en
+  // producción se leen de Vercel Blob (GTFS_DATA_URL) y en local directamente del disco.
+  outputFileTracingExcludes: { "*": ["./data/**"] },
   turbopack: {
     rules: {
       "*.css": {

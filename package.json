@@ -6,12 +6,26 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "postinstall": "node scripts/copy-maplibre-worker.mjs",
+    "gtfs:download": "node --env-file-if-exists=.env.local scripts/download-gtfs.mts",
+    "gtfs:process": "node scripts/process-gtfs.mts",
+    "gtfs:upload": "node --env-file-if-exists=.env.local scripts/upload-gtfs.mts",
+    "typecheck": "next typegen && tsc --noEmit"
   },
   "dependencies": {
+    "@vercel/blob": "^2.4.1",
+    "gtfs-realtime-bindings": "^2.2.0",
+    "lucide-react": "^1.78.0",
+    "maplibre-gl": "^6.19.0",
     "next": "16.4.6",
     "react": "19.3.0",
     "react-dom": "19.3.0"
+  },
+  "overrides": {
+    "@vercel/cli-config": {
+      "zod": "^4.6.6"
+    }
   },
   "devDependencies": {
     "@tailwindcss/turbopack": "4.3.3",
@@ -20,6 +34,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.4.6",
+    "fflate": "^0.8.3",
     "tailwindcss": "4.3.3",
     "typescript": "^5"
   }
