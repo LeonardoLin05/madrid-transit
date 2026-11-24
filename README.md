@@ -5,7 +5,7 @@ Web para consultar el transporte público de la Comunidad de Madrid: Metro, Metr
 ## Funcionalidades
 
 - **Buscador de paradas** por nombre o código, en todos los modos, con las líneas de cada parada.
-- **Próximas salidas** de cada parada, filtrables por línea (horario teórico del GTFS del CRTM).
+- **Próximas salidas** de cada parada, filtrables por línea (horario teórico de los GTFS del CRTM y de Renfe).
 - **Cercanías en tiempo real** (feeds de Renfe):
   - Llegadas con retraso o adelanto, vía, número de tren, dónde va el tren y trenes suprimidos.
   - Mapa con las líneas, las estaciones y la posición de los trenes; al pulsar una estación se abre un panel con sus próximos trenes.
@@ -41,6 +41,7 @@ npm run dev                  # http://localhost:3000
 | Origen | Uso |
 |--------|-----|
 | [GTFS del CRTM](https://datos.crtm.es) (Consorcio Regional de Transportes de Madrid) | Paradas, líneas, recorridos y horarios teóricos |
+| [GTFS de Renfe Cercanías](https://data.renfe.com) | Cercanías: paradas, líneas, recorridos y horarios teóricos (recortado al núcleo de Madrid) |
 | [GTFS-Realtime de Renfe](https://data.renfe.com) | Cercanías: retrasos, posición de los trenes y avisos |
 
 Los datos en tiempo real se consultan siempre desde el servidor. Este proyecto no está afiliado al CRTM ni a Renfe.
@@ -51,7 +52,7 @@ Variables de entorno (plantilla en `.env.example`):
 
 | Variable | Uso |
 |----------|-----|
-| `GTFS_URL_<MODO>` | URL del ZIP GTFS de cada modo, para `npm run gtfs:download` |
+| `GTFS_URL_<MODO>` | URL del ZIP GTFS de cada modo, para `npm run gtfs:download`. La de Cercanías es opcional (por defecto, el GTFS público de Renfe) |
 | `GTFS_DATA_URL` | Opcional. URL base desde la que leer los JSON preprocesados en vez de `data/gtfs/processed/` |
 | `GTFSRT_CERCANIAS_*` | Opcionales. Sustituyen las URLs de los feeds de Renfe |
 

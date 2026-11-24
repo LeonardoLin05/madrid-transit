@@ -1,4 +1,4 @@
-# Genera los JSON de data/gtfs/processed/ a partir de los GTFS del CRTM y los publica en GitHub
+# Genera los JSON de data/gtfs/processed/ a partir de los GTFS del CRTM y de Renfe (Cercanías) y los publica en GitHub
 # Pages. No hace commits: cada publicación sustituye a la anterior, así que el repositorio no crece.
 # La web los lee de GTFS_DATA_URL sin redesplegar. Ver docs/arquitectura.md.
 name: Publicar datos GTFS
@@ -25,6 +25,7 @@ jobs:
     env:
       GTFS_URL_METRO: ${{ secrets.GTFS_URL_METRO }}
       GTFS_URL_METRO_LIGERO: ${{ secrets.GTFS_URL_METRO_LIGERO }}
+      # Opcional: sin el secreto se usa el GTFS público de Renfe (DEFAULT_URLS en download-gtfs.mts).
       GTFS_URL_CERCANIAS: ${{ secrets.GTFS_URL_CERCANIAS }}
       GTFS_URL_EMT: ${{ secrets.GTFS_URL_EMT }}
       GTFS_URL_INTERURBANOS: ${{ secrets.GTFS_URL_INTERURBANOS }}

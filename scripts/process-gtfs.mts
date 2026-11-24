@@ -27,10 +27,10 @@
  * Los ficheros se leen en streaming porque `stop_times.txt` / `shapes.txt` pueden pesar cientos de MB.
  */
 import { once } from "node:events";
-import { createReadStream, createWriteStream } from "node:fs";
+import { createWriteStream } from "node:fs";
 import { access, mkdir, readdir, rm, stat } from "node:fs/promises";
 import path from "node:path";
-import { createInterface } from "node:readline";
+import { readCsv } from "./lib/csv.mts";
 
 const RAW_DIR = path.resolve(import.meta.dirname, "../data/gtfs/raw");
 const OUT_DIR = path.resolve(import.meta.dirname, "../data/gtfs/processed");
@@ -47,56 +47,8 @@ const COORD_DECIMALS = 5;
  */
 const TRIP_ID_MODES = new Set(["cercanias"]);
 
-type Row = Record<string, string>;
 type ScheduleRow =
   [number, string, string, string] | [number, string, string, string, string];
-
-// ───────────────────────── Lectura de CSV ─────────────────────────
-
-/** Separa una línea CSV respetando comillas ("a,b", "" escapadas). */
-function splitCsvLine(line: string): string[] {
-  if (!line.includes('"')) return line.split(",");
-  const out: string[] = [];
-  let cur = "";
-  let quoted = false;
-  for (let i = 0; i < line.length; i++) {
-    const ch = line[i];
-    if (quoted) {
-      if (ch === '"' && line[i + 1] === '"') {
-        cur += '"';
-        i++;
-      } else if (ch === '"') quoted = false;
-      else cur += ch;
-    } else if (ch === '"') quoted = true;
-    else if (ch === ",") {
-      out.push(cur);
-      cur = "";
-    } else cur += ch;
-  }
-  out.push(cur);
-  return out;
-}
-
-/** Itera las filas de un CSV como objetos cabecera → valor (admite BOM y CRLF). */
-async function* readCsv(file: string): AsyncGenerator<Row> {
-  const lines = createInterface({
-    input: createReadStream(file, "utf8"),
-    crlfDelay: Infinity,
-  });
-  let header: string[] | null = null;
-  for await (const raw of lines) {
-    const line = header ? raw : raw.replace(/^﻿/, "");
-    if (!line) continue;
-    const cells = splitCsvLine(line);
-    if (!header) {
-      header = cells.map((h) => h.trim());
-      continue;
-    }
-    const row: Row = {};
-    for (let i = 0; i < header.length; i++) row[header[i]] = cells[i] ?? "";
-    yield row;
-  }
-}
 
 async function exists(file: string): Promise<boolean> {
   try {

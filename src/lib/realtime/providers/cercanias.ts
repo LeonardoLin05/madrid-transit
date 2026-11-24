@@ -29,7 +29,7 @@ const MODE = "cercanias" as const;
 
 /**
  * Feeds de Renfe (todos los núcleos de Cercanías de España; se filtran los de Madrid cruzándolos
- * con el GTFS del CRTM, cuyos `trip_id`, `stop_id` y `route_id` coinciden). Se pueden sustituir
+ * con el GTFS estático de Renfe recortado a Madrid, cuyos `trip_id`, `stop_id` y `route_id` coinciden). Se pueden sustituir
  * con variables de entorno.
  */
 const feedUrls = () => ({
@@ -266,7 +266,7 @@ async function getVehicles() {
     if (!v?.position) continue;
     const tripId = v.trip?.tripId;
     const trip = tripRoute(trips, tripId);
-    // Solo trenes del núcleo de Madrid: viaje del GTFS del CRTM o parada de Madrid.
+    // Solo trenes del núcleo de Madrid: viaje del GTFS (recortado a Madrid) o parada de Madrid.
     if (!trip && !(v.stopId && stops?.[v.stopId])) continue;
 
     const route = trip ? routes?.[trip.routeId] : undefined;

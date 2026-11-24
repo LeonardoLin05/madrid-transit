@@ -22,7 +22,7 @@ Son pantallas comunes que cada modo puede sustituir por la suya (cada modo tiene
 - `src/lib/gtfs/schedule.ts`: `getNextDepartures` filtra los horarios por los servicios activos hoy (calendario + excepciones), con hora de Madrid, incluyendo salidas pasada la medianoche. `getFeedStatus` avisa si el calendario del GTFS ha caducado. Con `perLine` devuelve salidas de cada línea, para poder filtrar por línea en el cliente.
 - `src/components/transport/`: `StopBrowser` (búsqueda), `StopDetail` (parada), `StopSearch`, `StopDepartures` (insignias de línea seleccionables para filtrar las salidas), `DeparturesTable` y `LineBadge` (insignia de línea con los colores del feed).
 
-Si el calendario de un GTFS caduca (ocurre cuando el CRTM no publica una versión nueva), la parada muestra un aviso y puede no tener salidas.
+Si el calendario de un GTFS caduca (ocurre cuando el CRTM o Renfe no publican una versión nueva), la parada muestra un aviso y puede no tener salidas.
 
 ### Tiempo real de Cercanías
 
@@ -34,7 +34,7 @@ Renfe publica tres feeds GTFS-Realtime en JSON (`https://gtfsrt.renfe.com/…`, 
 | `vehicle_positions.json` | Posición de cada tren, parada en la que está o a la que va, estado y vía (`PLATF.(n)` en la etiqueta) |
 | `alerts.json` | Avisos e incidencias por línea o estación |
 
-Los feeds cubren todos los núcleos de España; se quedan los de Madrid porque sus `trip_id`, `stop_id` y `route_id` coinciden con los del GTFS del CRTM. El proveedor (`src/lib/realtime/providers/cercanias.ts`) los descarga desde el servidor, cacheados por Next (15 s los de trenes y 60 s los avisos), y expone:
+Los feeds cubren todos los núcleos de España; se quedan los de Madrid porque sus `trip_id`, `stop_id` y `route_id` coinciden con los del GTFS estático de Renfe (recortado a Madrid). El proveedor (`src/lib/realtime/providers/cercanias.ts`) los descarga desde el servidor, cacheados por Next (15 s los de trenes y 60 s los avisos), y expone:
 
 - **Llegadas a una parada** (`GET /api/realtime/cercanias?stop=<id>`): parte del horario teórico (`getUpcomingStopTimes`, incluyendo hasta 2 h atrás para los trenes retrasados) y, por `trip_id`, aplica el retraso, marca las supresiones y añade dónde está el tren y su vía. Descarta los trenes que ya han pasado (si el tren está en una parada posterior según su horario). Si no hay dato en vivo de un tren, queda como «Horario teórico».
 - **Trenes** (`GET /api/realtime/cercanias/vehicles`): posición, línea, destino (vía `trips.json`), parada, vía y retraso.
@@ -64,7 +64,8 @@ Los colores son variables semánticas definidas en `src/app/globals.css` (`bg-ba
 
 | Tipo | Origen | Formato | Uso |
 |------|--------|---------|-----|
-| Estática | GTFS del **CRTM** (Consorcio Regional de Transportes de Madrid) | ZIP con CSV | Paradas, líneas, recorridos y horarios teóricos |
+| Estática | GTFS del **CRTM** (Consorcio Regional de Transportes de Madrid) | ZIP con CSV | Paradas, líneas, recorridos y horarios teóricos (salvo Cercanías) |
+| Estática | GTFS de **Renfe Cercanías** (`fomento_transit.zip`, público) | ZIP con CSV | Lo mismo para Cercanías. Trae todos los núcleos de España y `gtfs:download` lo recorta a Madrid (ver abajo) |
 | Dinámica | APIs públicas (p. ej. EMT MobilityLabs) | JSON | Llegadas en tiempo real |
 | Dinámica | Feeds **GTFS-Realtime** | Protobuf (`.pb`) o JSON | Trip updates, posiciones de vehículos y alertas |
 
@@ -99,6 +100,7 @@ El resto (`agency.txt`, `feed_info.txt`…) se descarta. Si hace falta otro, se 
 Notas:
 - Los JSON se escriben compactos (sin espacios ni saltos de línea) para que pesen lo mínimo: en producción Next solo cachea respuestas de hasta 2 MB. Para leerlos, `npx prettier --parser json` o `jq .`.
 - Los horarios son lo más pesado (EMT ~90 MB, interurbanos ~110 MB). Con `--no-schedules` se omiten `services.json` y la carpeta `schedules/`.
+- Cercanías sale del GTFS de Renfe (URL por defecto en `DEFAULT_URLS` de `scripts/download-gtfs.mts`, sustituible con `GTFS_URL_CERCANIAS`), que incluye todos los núcleos de España. Tras descomprimirlo, la descarga lo recorta a Madrid (`FILTERS`): se quedan las líneas cuyo `route_id` empieza por `10T` (núcleo 10) y, a partir de ellas, sus viajes, `stop_times`, paradas, servicios y trazados. Renfe rellena cada campo con espacios hasta un ancho fijo; `readCsv` (`scripts/lib/csv.mts`, común a ambos scripts) recorta los valores.
 - Cercanías no trae `direction_id` ni `trip_headsign`: cada línea del feed ya es un sentido (se usa la dirección `"0"`) y como destino se usa el nombre largo de la línea.
 - Ambas carpetas (`raw/`, `processed/`) están en `.gitignore`; se regeneran con los scripts.
 
@@ -166,7 +168,7 @@ madrid-transit/
 ## Flujo de datos
 
 ```
-GTFS CRTM (.zip) ── gtfs:download ──► raw/ ── gtfs:process ──► data/gtfs/processed ──► lib/gtfs ──► Server Components
+GTFS CRTM / Renfe (.zip) ── gtfs:download (+ recorte a Madrid) ──► raw/ ── gtfs:process ──► data/gtfs/processed ──► lib/gtfs ──► Server Components
                                                                          │
 APIs / GTFS-RT ──► lib/gtfs-rt + lib/realtime/providers ──► /api/realtime/[mode] ──► useRealtime (cliente)
 ```
